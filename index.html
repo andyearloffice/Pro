@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>상장 대기업 회계감사 수준 부기 시뮬레이터</title>
+<style>
+body {
+font-family: Arial, sans-serif;
+background: #f4f6f9;
+margin: 0;
+padding: 15px;
+color: #333;
+}
+header {
+background: #0f172a;
+color: #fff;
+padding: 15px;
+border-radius: 6px;
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 15px;
+}
+h1 { font-size: 1.1rem; margin: 0; }
+.btn {
+padding: 8px 12px;
+border: none;
+border-radius: 4px;
+font-weight: bold;
+cursor: pointer;
+font-size: 0.85rem;
+}
+.btn-green { background: #16a34a; color: #fff; }
+.btn-blue { background: #2563eb; color: #fff; width: 100%; margin-top: 10px; }
+.btn-gray { background: #64748b; color: #fff; }
+
+.dashboard {
+display: grid;
+grid-template-columns: repeat(2, 1fr);
+gap: 10px;
+margin-bottom: 15px;
+}
+.card {
+background: #fff;
+padding: 12px;
+border-radius: 6px;
+border: 1px solid #cbd5e1;
+}
+.card .title { font-size: 0.75rem; color: #64748b; margin-bottom: 4px; }
+.card .value { font-size: 1.1rem; font-weight: bold; color: #0f172a; }
+
+.panel {
+background: #fff;
+padding: 15px;
+border-radius: 6px;
+border: 1px solid #cbd5e1;
+margin-bottom: 15px;
+}
+.form-group { margin-bottom: 10px; }
+label { display: block; font-size: 0.75rem; color: #64748b; margin-bottom: 3px; }
+input, select {
+width: 100%;
+padding: 7px;
+border: 1px solid #cbd5e1;
+border-radius: 4px;
+box-sizing: border-box;
+font-size: 0.85rem;
+}
+
+table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+th, td { padding: 7px 5px; text-align: left; border-bottom: 1px solid #cbd5e1; }
+th { background: #f8fafc; color: #64748b; }
+.amount { text-align: right; }
+.table-container { overflow-x: auto; } /* 하단 잘림 방지용 고정 높이 제거 */
+</style>
+</head>
+<body>
+
+<header>
+<h1>🏢 대기업 감사 부기 Pro</h1>
+<div>
+<button class="btn btn-green" onclick="addRandomData()">➕ 감사 거래 생성</button>
+<button class="btn btn-gray" onclick="clearData()">초기화</button>
+</div>
+</header>
+
+<div class="dashboard">
+<div class="card">
+<div class="title">총 전표 건수</div>
+<div class="value" id="cntView">0 건</div>
+</div>
+<div class="card">
+<div class="title">연결 총자산</div>
+<div class="value" id="assetView">1,500,000,000 원</div>
+</div>
+<div class="card">
+<div class="title">총 부채</div>
+<div class="value" id="liabView">500,000,000 원</div>
+</div>
+<div class="card">
+<div class="title">당기순이익</div>
+<div class="value" id="profitView">0 원</div>
+</div>
+</div>
+
+<div class="panel">
+<h3>상장사 수동 분개 입력</h3>
+<div class="form-group">
+<label>거래 일자</label>
+<input type="date" id="txtDate">
+</div>
+<div class="form-group">
+<label>적요 (K-IFRS 회계이벤트)</label>
+<input type="text" id="txtDesc" value="종속기업 유상증자 참여">
+</div>
+<div class="form-group">
+<label>차변 계정과목</label>
+<select id="selDebit">
+<option value="현금및현금성자산">현금및현금성자산 (자산)</option>
+<option value="매출채권">매출채권 (자산)</option>
+<option value="재고자산">재고자산 (자산)</option>
+<option value="유형자산(설비)">유형자산(설비) (자산)</option>
+<option value="사용권자산">사용권자산 (리스자산)</option>
+<option value="매출원가">매출원가 (비용)</option>
+<option value="판매비와관리비(급여/임차)">판매비와관리비 (비용)</option>
+<option value="감가상각비">감가상각비 (비용)</option>
+<option value="법인세비용">법인세비용 (비용)</option>
+<option value="개발비(무형자산)">개발비(무형자산) (자산)</option>
+<option value="유형자산손상차손">유형자산손상차손 (비용)</option>
+<option value="대손상각비">대손상각비 (비용)</option>
+</select>
+</div>
+<div class="form-group">
+<label>대변 계정과목</label>
+<select id="selCredit">
+<option value="매출액">매출액 (수익)</option>
+<option value="매입채무">매입채무 (부채)</option>
+<option value="단기차입금">단기차입금 (부채)</option>
+<option value="사채">사채 (장기부채)</option>
+<option value="충당부채">충당부채 (부채)</option>
+<option value="이연법인세부채">이연법인세부채 (부채)</option>
+<option value="자본금">자본금 (자본)</option>
+<option value="보통예금">보통예금 (자산감소)</option>
+<option value="전환사채">전환사채 (부채)</option>
+<option value="파생상품평가이익">파생상품평가이익 (수익)</option>
+<option value="국고보조금">국고보조금 (부채)</option>
+<option value="리스부채">리스부채 (부채)</option>
+</select>
+</div>
+<div class="form-group">
+<label>거래 금액 (원)</label>
+<input type="number" id="txtAmount" value="50000000" step="1000000">
+</div>
+<button class="btn btn-blue" onclick="manualSubmit()">전표 승인 및 장부 반영</button>
+</div>
+
+<div class="panel">
+<h3>연결 분개장 및 감사 추적 로그</h3>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>No</th>
+<th>일자</th>
+<th>적요</th>
+<th>차변</th>
+<th>대변</th>
+<th class="amount">금액</th>
+</tr>
+</thead>
+<tbody id="tbodyList">
+<tr><td colspan="6" style="text-align:center; color:#64748b; padding:20px;">데이터가 없습니다. 상단 버튼을 누르세요.</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<script>
+document.getElementById('txtDate').value = new Date().toISOString().slice(0, 10);
+
+var ledger = [];
+
+// 상장 대기업 회계감사 수준의 확장된 거래 풀span_1span_1
+var auditSamples = [
+{ desc: "국내외 법인 대규모 제품 매출 인식", debit: "매출채권", credit: "매출액", amount: 1500000000 },
+{ desc: "공장 설비 정기 감가상각비 계상", debit: "감가상각비", credit: "유형자산(설비)", amount: 120000000 },
+{ desc: "무보증 공모 사채 발행 (자금조달)", debit: "현금및현금성자산", credit: "사채", amount: 5000000000 },
+{ desc: "종속기업 주식 추가 취득 (지분법)", debit: "현금및현금성자산", credit: "보통예금", amount: 800000000 },
+{ desc: "제품 하자보증 충당부채 설정", debit: "판매비와관리비(급여/임차)", credit: "충당부채", amount: 45000000 },
+{ desc: "당기법인세추정치 법인세비용 계상", debit: "법인세비용", credit: "이연법인세부채", amount: 320000000 },
+{ desc: "임직원 성과상여금 보통예금 지급", debit: "판매비와관리비(급여/임차)", credit: "보통예금", amount: 650000000 },
+{ desc: "해외 원재료 수입 매입채무 발생", debit: "재고자산", credit: "매입채무", amount: 2100000000 },
+{ desc: "운영 리스 계약에 따른 사용권자산 인식", debit: "사용권자산", credit: "단기차입금", amount: 300000000 },
+{ desc: "전환사채(CB) 발행에 따른 부채요소 및 전환권대가 분리", debit: "현금및현금성자산", credit: "전환사채", amount: 3000000000 },
+{ desc: "통화선도 파생상품 계약 평가이익 인식", debit: "파생상품자산", credit: "파생상품평가이익", amount: 170000000 },
+{ desc: "정부 보조금 수취에 따른 국고보조금 인식", debit: "현금및현금성자산", credit: "국고보조금", amount: 500000000 },
+{ desc: "연구개발비(R&D) 지출 중 무형자산 요건 충족분 계상", debit: "개발비(무형자산)", credit: "보통예금", amount: 1200000000 },
+{ desc: "유형자산 손상징후 포착에 따른 손상차손 인식", debit: "유형자산손상차손", credit: "유형자산(설비)", amount: 750000000 },
+{ desc: "장기성 매출채권에 대한 대손충당금 추가 설정", debit: "대손상각비", credit: "매출채권대손충당금", amount: 160000000 }
+];
+
+function insertRecord(date, desc, debit, credit, amount) {
+ledger.unshift({
+no: ledger.length + 1,
+date: date,
+desc: desc,
+debit: debit,
+credit: credit,
+amount: Number(amount)
+});
+refreshUI();
+}
+
+function addRandomData() {
+var item = auditSamples[Math.floor(Math.random() * auditSamples.length)];
+var date = document.getElementById('txtDate').value;
+var randomVariation = Math.floor(Math.random() * 10) * 10000000;
+insertRecord(date, item.desc + " [감사 # " + (ledger.length + 1) + "]", item.debit, item.credit, item.amount + randomVariation);
+}
+
+function manualSubmit() {
+var date = document.getElementById('txtDate').value;
+var desc = document.getElementById('txtDesc').value;
+var debit = document.getElementById('selDebit').value;
+var credit = document.getElementById('selCredit').value;
+var amount = document.getElementById('txtAmount').value;
+
+if (!desc) {
+alert("적요를 입력해주세요.");
+return;
+}
+insertRecord(date, desc, debit, credit, amount);
+}
+
+function clearData() {
+ledger = [];
+refreshUI();
+}
+
+function refreshUI() {
+document.getElementById('cntView').innerText = ledger.length + " 건";
+
+var asset = 1500000000; // 기초 대기업 총자산 (15억)
+var liab = 500000000; // 기초 총부채 (5억)
+var rev = 0;
+var exp = 0;
+
+for (var i = 0; i < ledger.length; i++) {
+var item = ledger[i];
+if (["현금및현금성자산", "매출채권", "재고자산", "유형자산(설비)", "사용권자산", "개발비(무형자산)", "파생상품자산"].includes(item.debit)) {
+asset += item.amount;
+}
+if (item.credit === "보통예금" || item.credit === "유형자산(설비)") {
+asset -= item.amount;
+}
+if (item.debit === "유형자산손상차손") {
+asset -= item.amount;
+}
+if (["매입채무", "단기차입금", "사채", "충당부채", "이연법인세부채", "전환사채", "국고보조금", "리스부채", "매출채권대손충당금"].includes(item.credit)) {
+liab += item.amount;
+}
+if (["매출액", "파생상품평가이익"].includes(item.credit)) {
+rev += item.amount;
+}
+if (["매출원가", "판매비와관리비(급여/임차)", "감가상각비", "법인세비용", "유형자산손상차손", "대손상각비"].includes(item.debit)) {
+exp += item.amount;
+}
+}
+
+document.getElementById('assetView').innerText = asset.toLocaleString() + " 원";
+document.getElementById('liabView').innerText = liab.toLocaleString() + " 원";
+document.getElementById('profitView').innerText = (rev - exp).toLocaleString() + " 원";
+
+var tbody = document.getElementById('tbodyList');
+if (ledger.length === 0) {
+tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#64748b; padding:20px;">데이터가 없습니다. 상단 버튼을 누르세요.</td></tr>';
+return;
+}
+
+var html = "";
+for (var j = 0; j < ledger.length; j++) {
+var row = ledger[j];
+html += '<tr>' +
+'<td>' + row.no + '</td>' +
+'<td>' + row.date + '</td>' +
+'<td><strong>' + row.desc + '</strong></td>' +
+'<td style="color:#2563eb">' + row.debit + '</td>' +
+'<td style="color:#dc2626">' + row.credit + '</td>' +
+'<td class="amount">' + row.amount.toLocaleString() + '원</td>' +
+'</tr>';
+}
+tbody.innerHTML = html;
+}
+</script>
+</body>
+</html>
